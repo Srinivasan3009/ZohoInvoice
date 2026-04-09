@@ -1,0 +1,12 @@
+# Node
+node_modules/
+.env
+
+# Java/IDE
+target/
+*.class
+.settings/
+.project
+.classpath
+.idea/
+*.iml
