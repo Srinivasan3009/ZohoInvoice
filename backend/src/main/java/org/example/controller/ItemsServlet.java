@@ -36,30 +36,37 @@ public class ItemsServlet extends HttpServlet {
 
         PrintWriter out = response.getWriter();
         JsonArray itemsArray = new JsonArray();
+        String userId = request.getParameter("userId");
 
         try (Connection con = DBConnection.getConnection()) {
+            String sql;
+            PreparedStatement ps;
 
-            String sql = "SELECT * FROM items";
-            PreparedStatement ps = con.prepareStatement(sql);
+            if (userId != null && !userId.isEmpty()) {
+                sql = "SELECT * FROM items WHERE user_id = ?";
+                ps = con.prepareStatement(sql);
+                ps.setInt(1, Integer.parseInt(userId));
+            } else {
+                sql = "SELECT * FROM items WHERE user_id = -1";
+                ps = con.prepareStatement(sql);
+            }
+
             ResultSet rs = ps.executeQuery();
-
             while (rs.next()) {
                 JsonObject item = new JsonObject();
-
                 item.addProperty("id", rs.getInt("id"));
                 item.addProperty("name", rs.getString("name"));
                 item.addProperty("description", rs.getString("description"));
                 item.addProperty("price", rs.getDouble("price"));
-
                 itemsArray.add(item);
             }
 
-            out.print(itemsArray);
-
+            out.print(itemsArray.toString());
+            out.flush();
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(500);
-            out.print("{\"message\":\"Server error\"}");
+            out.print("{\"error\":\"Internal Server Error\"}");
         }
     }
 
@@ -83,18 +90,18 @@ public class ItemsServlet extends HttpServlet {
 
             Map<String, String> data =
                     gson.fromJson(reader, Map.class);
-
             String name = data.get("name");
             String description = data.get("description");
             String price = data.get("price");
-
+            String userIdStr = data.get("userId");
             String sql =
-                    "INSERT INTO items(name, description, price) VALUES(?,?,?)";
+                    "INSERT INTO items(name, description, price,user_id) VALUES(?,?,?,?)";
 
             PreparedStatement ps = con.prepareStatement(sql);
             ps.setString(1, name);
             ps.setString(2, description);
             ps.setDouble(3, Double.parseDouble(price));
+            ps.setInt(4, Integer.parseInt(userIdStr));
 
             ps.executeUpdate();
 

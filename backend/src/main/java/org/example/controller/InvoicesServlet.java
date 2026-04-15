@@ -31,7 +31,7 @@ public class InvoicesServlet extends HttpServlet {
                 BufferedReader reader = request.getReader();
                 JsonObject json =
                         JsonParser.parseReader(reader).getAsJsonObject();
-
+                int userId = json.get("userId").getAsInt();
                 int customerId =
                         json.get("customerId").getAsInt();
 
@@ -49,14 +49,14 @@ public class InvoicesServlet extends HttpServlet {
                     totalAmount += qty * price;
                 }
                 String invoiceSql =
-                        "INSERT INTO invoices(customer_id, invoice_date, total_amount) VALUES (?, NOW(), ?)";
+                        "INSERT INTO invoices(customer_id,user_id, invoice_date, total_amount) VALUES (?,?, NOW(), ?)";
 
                 PreparedStatement invoiceStmt =
                         con.prepareStatement(invoiceSql, Statement.RETURN_GENERATED_KEYS);
 
                 invoiceStmt.setInt(1, customerId);
-                invoiceStmt.setDouble(2, totalAmount);
-
+                invoiceStmt.setInt(2, userId);
+                invoiceStmt.setDouble(3, totalAmount);
                 invoiceStmt.executeUpdate();
 
                 ResultSet rs = invoiceStmt.getGeneratedKeys();
@@ -105,20 +105,30 @@ public class InvoicesServlet extends HttpServlet {
         resp.setContentType("application/json");
         PrintWriter out = resp.getWriter();
         String idParam = req.getParameter("id");
+        String userId = req.getParameter("userId");
+        if (userId == null || userId.equals("undefined") || userId.isEmpty()) {
+            resp.setStatus(400);
+            out.print("{\"error\":\"User ID is required\"}");
+            return;
+        }
 
         try (Connection con = DBConnection.getConnection()) {
-            if (idParam != null) {
+            int uId = Integer.parseInt(userId);
 
+            if (idParam != null && !idParam.equals("undefined")) {
                 int invoiceId = Integer.parseInt(idParam);
                 JsonObject invoiceData = new JsonObject();
 
-                String sqlHeader = "SELECT i.*, c.name FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE i.id = ?";
+                // 2. Secured query with BOTH id and user_id
+                String sqlHeader = "SELECT i.*, c.name FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE i.id = ? AND i.user_id = ?";
                 PreparedStatement psHeader = con.prepareStatement(sqlHeader);
                 psHeader.setInt(1, invoiceId);
+                psHeader.setInt(2, uId);
                 ResultSet rsHeader = psHeader.executeQuery();
 
                 if (rsHeader.next()) {
                     invoiceData.addProperty("id", rsHeader.getInt("id"));
+                    invoiceData.addProperty("customerName", rsHeader.getString("name")); // Useful for the view!
                     invoiceData.addProperty("customerId", rsHeader.getInt("customer_id"));
                     invoiceData.addProperty("totalAmount", rsHeader.getDouble("total_amount"));
 
@@ -137,11 +147,15 @@ public class InvoicesServlet extends HttpServlet {
                     }
                     invoiceData.add("rows", rows);
                     out.print(invoiceData);
+                } else {
+                    resp.setStatus(404);
+                    out.print("{\"error\":\"Invoice not found or access denied\"}");
                 }
-            } else {
+            }else {
                 JsonArray invoiceArray = new JsonArray();
-                String sql = "SELECT i.id, c.name AS customer_name, i.invoice_date, i.total_amount FROM invoices i JOIN customers c ON i.customer_id = c.id ORDER BY i.id DESC";
+                String sql = "SELECT i.id, c.name AS customer_name, i.invoice_date, i.total_amount FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE i.user_id = ? ORDER BY i.id DESC";
                 PreparedStatement ps = con.prepareStatement(sql);
+                ps.setInt(1, Integer.parseInt(userId));
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
                     JsonObject obj = new JsonObject();

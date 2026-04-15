@@ -3,6 +3,7 @@ package org.example.controller;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.example.util.DBConnection;
 
 import jakarta.servlet.*;
@@ -28,30 +29,27 @@ public class CustomerServlet extends HttpServlet {
         setCors(response);
         response.setContentType("application/json");
 
-        PrintWriter out = response.getWriter();
+        String userId = request.getParameter("userId");
+        JsonArray customersArray = new JsonArray();
 
         try (Connection con = DBConnection.getConnection()) {
-
-            String sql = "SELECT * FROM customers ORDER BY id DESC";
+            // Filter by the logged-in user
+            String sql = "SELECT * FROM customers WHERE user_id = ?";
             PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, Integer.parseInt(userId));
+
             ResultSet rs = ps.executeQuery();
-
-            JsonArray customers = new JsonArray();
-
             while (rs.next()) {
-                JsonObject c = new JsonObject();
-                c.addProperty("id", rs.getInt("id"));
-                c.addProperty("name", rs.getString("name"));
-                c.addProperty("email", rs.getString("email"));
-                c.addProperty("phone", rs.getString("phone"));
-                c.addProperty("address", rs.getString("address"));
-
-                customers.add(c);
+                JsonObject cust = new JsonObject();
+                cust.addProperty("id", rs.getInt("id"));
+                cust.addProperty("name", rs.getString("name"));
+                cust.addProperty("email", rs.getString("email"));
+                cust.addProperty("phone", rs.getString("phone"));
+                customersArray.add(cust);
             }
-
-            out.print(customers);
-
-        } catch (Exception e) {
+            response.setContentType("application/json");
+            response.getWriter().print(customersArray);
+        }catch (Exception e) {
             e.printStackTrace();
             response.setStatus(500);
         }
@@ -64,38 +62,25 @@ public class CustomerServlet extends HttpServlet {
         setCors(response);
         response.setContentType("application/json");
 
-        PrintWriter out = response.getWriter();
-
+        JsonObject json = JsonParser.parseReader(request.getReader()).getAsJsonObject();
+        int userId = Integer.parseInt(json.get("userId").getAsString());
+        String name = json.get("name").getAsString();
+        String email = json.get("email").getAsString();
+        String phone = json.get("phone").getAsString();
+        String address = json.get("address").getAsString();
         try (Connection con = DBConnection.getConnection()) {
-
-            BufferedReader reader = request.getReader();
-
-            Map<String, String> data =
-                    gson.fromJson(reader, Map.class);
-
-            String name = data.get("name");
-            String email = data.get("email");
-            String phone = data.get("phone");
-            String address = data.get("address");
-
-            String sql =
-                    "INSERT INTO customers(name,email,phone,address) VALUES(?,?,?,?)";
-
+            String sql = "INSERT INTO customers (name, email, phone,address, user_id) VALUES (?, ?, ?,?, ?)";
             PreparedStatement ps = con.prepareStatement(sql);
-
             ps.setString(1, name);
             ps.setString(2, email);
             ps.setString(3, phone);
             ps.setString(4, address);
+            ps.setInt(5, userId);
 
             ps.executeUpdate();
-
-            out.print("{\"success\":true}");
-
-        } catch (Exception e) {
+            response.getWriter().print("{\"status\":\"success\"}");
+        }catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            out.print("{\"success\":false}");
         }
     }
 

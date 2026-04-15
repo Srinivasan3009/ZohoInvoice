@@ -47,7 +47,13 @@ public class LoginServlet extends HttpServlet {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                out.print("{\"success\":true}");
+                int userId = rs.getInt("id");
+
+                JsonObject jsonResponse = new JsonObject();
+                jsonResponse.addProperty("success", true);
+                jsonResponse.addProperty("userId", userId);
+
+                out.print(jsonResponse);
             } else {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 out.print("{\"success\":false,\"message\":\"Invalid credentials\"}");
