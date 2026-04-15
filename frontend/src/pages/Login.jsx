@@ -17,39 +17,63 @@ function Login() {
       const res = await loginUser({ email, password });
 
       if (res.success) {
-        navigate("/dashboard");
+          localStorage.setItem("userId", res.userId);
+          navigate("/dashboard");
       }
     } catch (err) {
       setError(err.message);
     }
   };
 
-  return (
+return (
     <div style={styles.container}>
-      <form style={styles.box} onSubmit={handleSubmit}>
-        <h2>Login</h2>
+      <div style={styles.box}>
+        <form onSubmit={handleSubmit}>
+          <h2 style={{ textAlign: "center", marginBottom: "20px" }}>Login</h2>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+          {error && <p style={{ color: "red", fontSize: "14px" }}>{error}</p>}
 
-        <input
-          type="email"
-          placeholder="Email"
-          style={styles.input}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <input
+            type="email"
+            placeholder="Email"
+            style={styles.input}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-        <input
-          type="password"
-          placeholder="Password"
-          style={styles.input}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <input
+            type="password"
+            placeholder="Password"
+            style={styles.input}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-        <button style={styles.button}>Login</button>
-      </form>
+          <button style={styles.button}>Login</button>
+        </form>
+
+        <div style={footerStyle}>
+          <p>Don't have an account?
+            <span onClick={() => navigate("/signup")} style={linkStyle}> Sign Up</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
+const footerStyle = {
+  marginTop: "25px",
+  textAlign: "center",
+  fontSize: "14px",
+  color: "#64748b",
+};
+
+const linkStyle = {
+  color: "#2563eb",
+  cursor: "pointer",
+  fontWeight: "600",
+  marginLeft: "5px",
+};
 
 const styles = {
   container: {
@@ -61,21 +85,28 @@ const styles = {
   },
   box: {
     background: "#fff",
-    padding: "25px",
-    width: "300px",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    padding: "30px",
+    width: "350px",
+    borderRadius: "8px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
   },
   input: {
     width: "100%",
-    padding: "8px",
-    marginBottom: "12px",
+    padding: "12px",
+    marginBottom: "15px",
+    borderRadius: "4px",
+    border: "1px solid #ddd",
+    boxSizing: "border-box",
   },
   button: {
     width: "100%",
-    padding: "10px",
-    background: "#2563eb",
+    padding: "12px",
+    background: "#1e293b",
     color: "#fff",
     border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontWeight: "600",
   },
 };
 

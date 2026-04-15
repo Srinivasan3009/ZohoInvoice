@@ -1,21 +1,34 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./invoices.css";
 
 const API_URL = "http://localhost:8080/backend-1.0-SNAPSHOT/api/items";
 
 const Items = () => {
+    const userId = localStorage.getItem("userId");
+    const navigate = useNavigate();
+      useEffect(() => {
+        if (!userId) {
+          navigate("/login");
+        } else {
+          loadItems();
+        }
+      }, [userId]);
   const [items, setItems] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
     id: null,
     name: "",
     description: "",
-    price: ""
+    price: "",
+    userId: userId
   });
 
   const loadItems = async () => {
+      const userId = localStorage.getItem("userId");
+      console.log("Fetching for User ID:", userId);
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(`${API_URL}?userId=${userId}`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       setItems(data);
@@ -76,18 +89,21 @@ const Items = () => {
   };
 
   const handleEdit = (item) => {
+      const userId = localStorage.getItem("userId");
     setForm({
       id: item.id,
       name: item.name,
       description: item.description,
-      price: item.price
+      price: item.price,
+      userId: userId
     });
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetForm = () => {
-    setForm({ id: null, name: "", description: "", price: "" });
+      const userId = localStorage.getItem("userId");
+    setForm({ id: null, name: "", description: "", price: "",userId: userId });
     setIsEditing(false);
   };
 

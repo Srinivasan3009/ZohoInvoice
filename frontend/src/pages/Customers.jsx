@@ -4,6 +4,7 @@ import "./invoices.css";
 const API = "http://localhost:8080/backend-1.0-SNAPSHOT/api/customers";
 
 const Customers = () => {
+    const userId = localStorage.getItem("userId");
   const [customers, setCustomers] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
@@ -11,12 +12,14 @@ const Customers = () => {
     name: "",
     email: "",
     phone: "",
-    address: ""
+    address: "",
+    userId: userId
   });
   const fetchCustomers = async () => {
     try {
-      const res = await fetch(API);
-      const data = await res.json();
+    const currentId = localStorage.getItem("userId");
+    const res = await fetch(`${API}?userId=${currentId}`);
+    const data = await res.json();
       setCustomers(data);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -68,13 +71,17 @@ const Customers = () => {
   };
 
   const editCustomer = (c) => {
-    setForm(c);
+      const userId = localStorage.getItem("userId");
+    setForm({   ...c,
+                userId: userId
+              });
     setIsEditing(true);
     window.scrollTo(0, 0);
   };
 
   const resetForm = () => {
-    setForm({ id: null, name: "", email: "", phone: "", address: "" });
+      const userId = localStorage.getItem("userId");
+    setForm({ id: null, name: "", email: "", phone: "", address: "" ,userId: userId});
     setIsEditing(false);
   };
 

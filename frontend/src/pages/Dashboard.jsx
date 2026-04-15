@@ -1,8 +1,21 @@
 import React from "react";
-import { Link, Outlet } from "react-router-dom";
-
+import { useNavigate, Link, Outlet } from "react-router-dom";
+import { useEffect } from "react";
 const Dashboard = () => {
   const sidebarWidth = "200px";
+const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
+  useEffect(() => {
+    if (!userId) {
+      navigate("/login");
+    }
+  }, [userId, navigate]);
+  if (!userId) return null;
+  const handleLogout = () => {
+    localStorage.removeItem("userId"); // Delete the ID
+    navigate("/login"); // Go back to login
+  };
+
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -29,9 +42,22 @@ const Dashboard = () => {
             <li style={liStyle}><Link to="/dashboard/customers" style={linkStyle}>Customers</Link></li>
             <li style={liStyle}><Link to="/dashboard/invoices" style={linkStyle}>Invoices</Link></li>
           </ul>
+          <button
+              onClick={handleLogout}
+              style={{
+                marginBottom: "2px",
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+                padding: "10px",
+                borderRadius: "5px",
+                cursor: "pointer"
+              }}
+            >
+              Logout
+            </button>
         </nav>
       </div>
-
       <div style={{
         flex: 1,
         background: "#f1f5f9",

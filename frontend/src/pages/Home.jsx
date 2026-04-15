@@ -26,11 +26,11 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch all counts simultaneously
+const userId = localStorage.getItem("userId");
     Promise.all([
-      fetch(`${API}/items`).then((res) => res.json()),
-      fetch(`${API}/customers`).then((res) => res.json()),
-      fetch(`${API}/invoices`).then((res) => res.json()),
+      fetch(`${API}/items?userId=${userId}`).then((res) => res.json()),
+      fetch(`${API}/customers?userId=${userId}`).then((res) => res.json()),
+      fetch(`${API}/invoices?userId=${userId}`).then((res) => res.json()),
     ])
       .then(([items, customers, invoices]) => {
         setCounts({

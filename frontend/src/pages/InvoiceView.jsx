@@ -10,7 +10,8 @@ const InvoiceView = () => {
   const [invoice, setInvoice] = useState(null);
 
   useEffect(() => {
-    fetch(`${API}/invoices?id=${id}`)
+      const userId=localStorage.getItem("userId");
+    fetch(`${API}/invoices?id=${id}&userId=${userId}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Invoice Data Loaded:", data);

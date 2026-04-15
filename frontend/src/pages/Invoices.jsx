@@ -5,6 +5,7 @@ import "./invoices.css";
 const API = "http://localhost:8080/backend-1.0-SNAPSHOT/api";
 
 const Invoices = () => {
+    const userId = localStorage.getItem("userId");
   const [customers, setCustomers] = useState([]);
   const [items, setItems] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -15,18 +16,24 @@ const Invoices = () => {
     rows: []
   });
 const navigate = useNavigate();
-  const fetchInvoices = () => {
-    fetch(`${API}/invoices`)
+  useEffect(() => {
+    const currentUserId = localStorage.getItem("userId");
+    if (!currentUserId) {
+      navigate("/login");
+      return;
+    }
+    fetch(`${API}/customers?userId=${currentUserId}`).then(res => res.json()).then(setCustomers);
+    fetch(`${API}/items?userId=${currentUserId}`).then(res => res.json()).then(setItems);
+    fetchInvoices(currentUserId);
+  }, []);
+
+  const fetchInvoices = (uid) => {
+    const idToUse = uid || localStorage.getItem("userId");
+    fetch(`${API}/invoices?userId=${idToUse}`)
       .then(res => res.json())
       .then(setInvoices)
       .catch(err => console.error(err));
   };
-
-  useEffect(() => {
-    fetch(`${API}/customers`).then(res => res.json()).then(setCustomers);
-    fetch(`${API}/items`).then(res => res.json()).then(setItems);
-    fetchInvoices();
-  }, []);
 
   const addRow = () => {
     setInvoice({
@@ -54,18 +61,24 @@ const navigate = useNavigate();
   const grandTotal = invoice.rows.reduce((sum, r) => sum + r.price * r.qty, 0);
 
   const handleSubmit = async () => {
+      const currentUserId = localStorage.getItem("userId");
+        const payload = {
+          ...invoice,
+          userId: currentUserId,
+          totalAmount: grandTotal
+        };
     const method = isEditing ? "PUT" : "POST";
     const response = await fetch(`${API}/invoices`, {
       method: method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(invoice)
+      body: JSON.stringify(payload)
     });
 
     if (response.ok) {
       alert(isEditing ? "Invoice Updated!" : "Invoice Created!");
       setInvoice({ id: null, customerId: "", rows: [] });
       setIsEditing(false);
-      fetchInvoices();
+      fetchInvoices(currentUserId);
     }
   };
 
